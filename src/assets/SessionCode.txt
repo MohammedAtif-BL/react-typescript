@@ -1,0 +1,49 @@
+import Message from "./components/Message";
+
+
+const App = () => {
+  const user: User = {
+    name: "XYZ",
+    age: 25,
+  };
+
+  const handleAlert = (selectedUser: User) => {
+    alert(`Hello User:  ${selectedUser.name}, Age: ${selectedUser.age}`);
+  };
+
+  return (
+    <>
+      <h1> App Component</h1>
+      {/* <Message text={message} /> */}
+      {/* <Message text="Component 2" /> */}
+      <Message user={user} click={handleAlert} />
+    </>
+  );
+};
+
+export default App;
+
+// Message.tsx
+
+interface User {
+  name: string;
+  age: number;
+}
+
+interface UserProps {
+  user: User;
+  click: (user: User) => void;
+}
+
+function Message({ user, click }: UserProps) {
+  return (
+    <div>
+      {/* <h2>Message {text}</h2> */}
+      <h2>{user.name}</h2>
+      <h2>{user.age}</h2>
+      <button onClick={() => click(user)}>CLick Me</button>
+    </div>
+  );
+}
+
+export default Message;
