@@ -1,22 +1,21 @@
-import Home from "./components/Home";
-import About from "./components/About";
-import Message from "./components/Message";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { useState } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import UserFormPage from "./pages/UserFormPage";
+import UserTablePage from "./pages/UserTablePage";
+import { type FormData } from "./components/UserForm";
 
-function App() {
+const App = () => {
   return (
-    <Router>
-      <nav>
-        <Link to="/">Home</Link> |<Link to="/about">About</Link> |
-        <Link to="/message">Message</Link>
-      </nav>
+    <>
+      <h1 style={{ textAlign: "center" }}>App Loaded</h1> {/* Debug */}
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/message" element={<Message />} />
+        <Route path="/" element={<Navigate to="/users" replace />} />
+        <Route path="/users" element={<UserTablePage />} />
+        <Route path="/add-user" element={<UserFormPage />} />
+        <Route path="*" element={<h2>404 Page</h2>} />
       </Routes>
-    </Router>
+    </>
   );
-}
+};
 
 export default App;
