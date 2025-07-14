@@ -14,12 +14,16 @@ import {
   FormControl,
   FormControlLabel,
   Typography,
+  Snackbar,
+  Alert,
 } from "@mui/material";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { Male, Female, Person } from "@mui/icons-material";
+import { addUser, getUserById, updateUser } from "../service/userService";
 
-type FormData = {
+export type FormData = {
+  emp_id?: number;
   name: string;
   gender: string;
   profilePic: string;
@@ -77,13 +81,12 @@ const months = [
 ];
 const years = Array.from({ length: 50 }, (_, i) => (2025 - i).toString());
 
-type Props = {
-  onSubmit: (data: FormData) => void;
-  showCancel?: boolean;
-};
-
-const UserForm = ({ onSubmit, showCancel = false }: Props) => {
+const UserFormPage = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = !!id;
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [loading, setLoading] = useState(isEdit);
   const [day, setDay] = useState("");
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
@@ -98,8 +101,26 @@ const UserForm = ({ onSubmit, showCancel = false }: Props) => {
     note: "",
   });
 
-  const handleChange = (event: any) => {
-    const { name, value } = event.target;
+  useEffect(() => {
+    if (isEdit) {
+      getUserById(Number(id))
+        .then((res) => {
+          const data = res.data;
+          setForm(data);
+          const [d, m, y] = data.startDate.split("-");
+          setDay(d);
+          setMonth(m);
+          setYear(y);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch user", err);
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [id]);
+
+  const handleChange = (e: any) => {
+    const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -112,17 +133,30 @@ const UserForm = ({ onSubmit, showCancel = false }: Props) => {
     });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const startDate = `${day}-${month}-${year}`;
     const completeForm = { ...form, startDate };
-    console.log("Submitted Form Data:", completeForm);
-    onSubmit(completeForm);
+
+    try {
+      if (isEdit && completeForm.emp_id) {
+        await updateUser(completeForm.emp_id, completeForm);
+      } else {
+        await addUser(completeForm);
+      }
+
+      setOpenSnackbar(true);
+      setTimeout(() => navigate("/users"), 1500);
+    } catch (err) {
+      console.error("Error submitting form", err);
+    }
   };
+
+  if (loading) return <Typography textAlign="center">Loading...</Typography>;
 
   return (
     <Box sx={{ maxWidth: 600, mx: "auto", p: 3 }}>
       <Typography variant="h5" gutterBottom>
-        Employee Form
+        {isEdit ? "Edit User" : "Add New User"}
       </Typography>
 
       <TextField
@@ -133,9 +167,9 @@ const UserForm = ({ onSubmit, showCancel = false }: Props) => {
         sx={{ mb: 2 }}
         onChange={handleChange}
       />
-      {/* Gender Section */}
+
       <Box sx={{ mb: 2 }}>
-        <FormControl component="fieldset" fullWidth>
+        <FormControl fullWidth>
           <FormLabel>Gender</FormLabel>
           <RadioGroup
             row
@@ -154,9 +188,8 @@ const UserForm = ({ onSubmit, showCancel = false }: Props) => {
         </FormControl>
       </Box>
 
-      {/* Profile Picture Section */}
       <Box sx={{ mb: 2 }}>
-        <FormControl component="fieldset" fullWidth>
+        <FormControl fullWidth>
           <FormLabel>Profile Picture</FormLabel>
           <RadioGroup
             row
@@ -195,7 +228,7 @@ const UserForm = ({ onSubmit, showCancel = false }: Props) => {
       </FormControl>
 
       <Box sx={{ mb: 2 }}>
-        <FormLabel sx={{ mb: 1 }}>Start Date</FormLabel>
+        <FormLabel>Start Date</FormLabel>
         <Box display="flex" gap={2}>
           <FormControl fullWidth>
             <Select
@@ -249,8 +282,8 @@ const UserForm = ({ onSubmit, showCancel = false }: Props) => {
           max={100000}
           step={1000}
           value={form.salary}
-          onChange={(_, value) =>
-            setForm((prev) => ({ ...prev, salary: value as number }))
+          onChange={(_, v) =>
+            setForm((prev) => ({ ...prev, salary: v as number }))
           }
         />
       </Box>
@@ -270,20 +303,23 @@ const UserForm = ({ onSubmit, showCancel = false }: Props) => {
         <Button variant="contained" fullWidth onClick={handleSubmit}>
           Submit
         </Button>
-        {showCancel && (
-          <Button
-            variant="outlined"
-            fullWidth
-            color="secondary"
-            onClick={() => navigate("/users")}
-          >
-            Cancel
-          </Button>
-        )}
+        <Button
+          variant="outlined"
+          fullWidth
+          color="secondary"
+          onClick={() => navigate("/users")}
+        >
+          Cancel
+        </Button>
       </Box>
+
+      <Snackbar open={openSnackbar} autoHideDuration={2000}>
+        <Alert severity="success" sx={{ width: "100%" }}>
+          {isEdit ? "User updated successfully!" : "User added successfully!"}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
 
-export default UserForm;
-export type { FormData };
+export default UserFormPage;
